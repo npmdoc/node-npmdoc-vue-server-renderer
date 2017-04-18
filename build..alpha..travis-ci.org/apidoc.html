@@ -1,0 +1,253 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/vuejs/vue/tree/dev/packages/vue-server-renderer#readme"
+
+    >vue-server-renderer (v2.2.6)</a>
+</h1>
+<h4>server renderer for Vue 2.0</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.vue-server-renderer">module vue-server-renderer</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.vue-server-renderer.createBundleRenderer">
+            function <span class="apidocSignatureSpan">vue-server-renderer.</span>createBundleRenderer
+            <span class="apidocSignatureSpan">( bundle, rendererOptions )</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.vue-server-renderer.createRenderer">
+            function <span class="apidocSignatureSpan">vue-server-renderer.</span>createRenderer
+            <span class="apidocSignatureSpan">(options)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.vue-server-renderer" id="apidoc.module.vue-server-renderer">module vue-server-renderer</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.vue-server-renderer.createBundleRenderer" id="apidoc.element.vue-server-renderer.createBundleRenderer">
+        function <span class="apidocSignatureSpan">vue-server-renderer.</span>createBundleRenderer
+        <span class="apidocSignatureSpan">( bundle, rendererOptions )</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function createBundleRenderer( bundle, rendererOptions ) {
+  var renderer = createRenderer(rendererOptions);
+
+  var files, entry, maps;
+  var basedir = rendererOptions &#x26;&#x26; rendererOptions.basedir;
+
+  // load bundle if given filepath
+  if (
+    typeof bundle === &#x27;string&#x27; &#x26;&#x26;
+    /\.js(on)?$/.test(bundle) &#x26;&#x26;
+    path.isAbsolute(bundle)
+  ) {
+    if (fs.existsSync(bundle)) {
+      var isJSON = /\.json$/.test(bundle);
+      basedir = basedir || path.dirname(bundle);
+      bundle = fs.readFileSync(bundle, &#x27;utf-8&#x27;);
+      if (isJSON) {
+        try {
+          bundle = JSON.parse(bundle);
+        } catch (e) {
+          throw new Error((&#x22;Invalid JSON bundle file: &#x22; + bundle))
+        }
+      }
+    } else {
+      throw new Error((&#x22;Cannot locate bundle file: &#x22; + bundle))
+    }
+  }
+
+  if (typeof bundle === &#x27;object&#x27;) {
+    entry = bundle.entry;
+    files = bundle.files;
+    basedir = basedir || bundle.basedir;
+    maps = createSourceMapConsumers(bundle.maps);
+    if (typeof entry !== &#x27;string&#x27; || typeof files !== &#x27;object&#x27;) {
+      throw new Error(INVALID_MSG)
+    }
+  } else if (typeof bundle === &#x27;string&#x27;) {
+    entry = &#x27;__vue_ssr_bundle__&#x27;;
+    files = { &#x27;__vue_ssr_bundle__&#x27;: bundle };
+    maps = {};
+  } else {
+    throw new Error(INVALID_MSG)
+  }
+
+  var run = createBundleRunner(entry, files, basedir);
+
+  return {
+    renderToString: function (context, cb) {
+      if (typeof context === &#x27;function&#x27;) {
+        cb = context;
+        context = {};
+      }
+      run(context).catch(function (err) {
+        rewriteErrorTrace(err, maps);
+        cb(err);
+      }).then(function (app) {
+        if (app) {
+          renderer.renderToString(app, function (err, res) {
+            rewriteErrorTrace(err, maps);
+            cb(err, res);
+          }, context);
+        }
+      });
+    },
+
+    renderToStream: function (context) {
+      var res = new PassThrough();
+      run(context).catch(function (err) {
+        rewriteErrorTrace(err, maps);
+        // avoid emitting synchronously before user can
+        // attach error listener
+        process.nextTick(function () {
+          res.emit(&#x27;error&#x27;, err);
+        });
+      }).then(function (app) {
+        if (app) {
+          var renderStream = renderer.renderToStream(app, context);
+
+          renderStream.on(&#x27;error&#x27;, function (err) {
+            rewriteErrorTrace(err, maps);
+            res.emit(&#x27;error&#x27;, err);
+          });
+
+          // relay HTMLStream special events
+          if (rendererOptions &#x26;&#x26; rendererOptions.template) {
+            renderStream.on(&#x27;beforeStart&#x27;, function () {
+              res.emit(&#x27;beforeStart&#x27;);
+            });
+            renderStream.on(&#x27;beforeEnd&#x27;, function () {
+              res.emit(&#x27;beforeEnd&#x27;);
+            });
+          }
+
+          renderStream.pipe(res);
+        }
+      });
+
+      return res
+    }
+  }
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.vue-server-renderer.createRenderer" id="apidoc.element.vue-server-renderer.createRenderer">
+        function <span class="apidocSignatureSpan">vue-server-renderer.</span>createRenderer
+        <span class="apidocSignatureSpan">(options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function createRenderer$$1(options) {
+  if ( options === void 0 ) options = {};
+
+  return createRenderer$1({
+    isUnaryTag: isUnaryTag,
+    canBeLeftOpenTag: canBeLeftOpenTag,
+    modules: modules$1,
+    // user can provide server-side implementations for custom directives
+    // when creating the renderer.
+    directives: Object.assign(baseDirectives$1, options.directives),
+    // component cache (optional)
+    cache: options.cache,
+    // page template (optional)
+    template: options.template
+  })
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+## API
+
+### createRenderer([[rendererOptions](#renderer-options)])
+
+Create a `renderer` instance.
+
+``` js
+const renderer = require(&#x27;vue-server-renderer&#x27;).<span class="apidocCodeKeywordSpan">createRenderer</span>()
+```
+
+---
+
+### renderer.renderToString(vm, cb)
+
+Render a Vue instance to string. The callback is a standard Node.js callback that receives the error as the first argument:
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
