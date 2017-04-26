@@ -1,6 +1,6 @@
 # npmdoc-vue-server-renderer
 
-#### api documentation for  [vue-server-renderer (v2.2.6)](https://github.com/vuejs/vue/tree/dev/packages/vue-server-renderer#readme)  [![npm package](https://img.shields.io/npm/v/npmdoc-vue-server-renderer.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-vue-server-renderer) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-vue-server-renderer.svg)](https://travis-ci.org/npmdoc/node-npmdoc-vue-server-renderer)
+#### basic api documentation for  [vue-server-renderer (v2.2.6)](https://github.com/vuejs/vue/tree/dev/packages/vue-server-renderer#readme)  [![npm package](https://img.shields.io/npm/v/npmdoc-vue-server-renderer.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-vue-server-renderer) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-vue-server-renderer.svg)](https://travis-ci.org/npmdoc/node-npmdoc-vue-server-renderer)
 
 #### server renderer for Vue 2.0
 
@@ -61,7 +61,8 @@
         "url": "git+https://github.com/vuejs/vue.git"
     },
     "scripts": {},
-    "version": "2.2.6"
+    "version": "2.2.6",
+    "bin": {}
 }
 ```
 
